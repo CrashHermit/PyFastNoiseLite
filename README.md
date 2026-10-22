@@ -66,8 +66,12 @@ Cartesian derivatives with respect to the original input coordinates, including
 the frequency and rotation transformations. Other noise types and fractal
 compositions are not evaluated, and no full fractal-gradient API is provided.
 
-Scalar compatibility preserves small inherited FastNoiseLite lattice-selection
-discontinuities. Gradients are analytic within the selected polynomial branch;
-they are undefined at jumps. This API does not claim that the inherited scalar
-function is globally continuous or `C1`. Finite-difference stencils that cross a
-jump need not agree with its local derivative.
+The 3D OpenSimplex2S value-only sampler and these gradient APIs use complete
+active-corner support from the two offset cubic lattices. This corrects
+corner-selection discontinuities in the previous 3D implementation. The hash,
+gradient table, and normalization are retained, but corrected noise values
+intentionally differ where the old selection omitted contributing corners.
+The underlying compact-support polynomial contributions join continuously in
+real arithmetic; float precision still limits the numerical behavior observed
+at runtime. This change concerns 3D OpenSimplex2S only: it does not change 2D
+OpenSimplex2S or other noise algorithms.

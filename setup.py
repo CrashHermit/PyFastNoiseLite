@@ -5,7 +5,7 @@ from Cython.Build import cythonize
 
 __author__ = "Tiziano Bettio"
 __license__ = "MIT"
-__version__ = "0.0.8.dev0"
+__version__ = "0.0.8.dev1"
 
 __copyright__ = """
 Copyright (c) 2021 Tiziano Bettio
