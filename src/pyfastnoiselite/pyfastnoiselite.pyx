@@ -11,7 +11,7 @@ import numpy as np
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport unique_ptr
 
-from .cppfastnoiselite cimport FastNoiseLitePy as _FNL
+from .cppfastnoiselite cimport FastNoiseLitePy as _FNL, NoiseGradient3D
 # from .cppfastnoiselite cimport NoiseType as _NoiseType
 # from .cppfastnoiselite cimport RotationType3D as _RotationType3D
 # from .cppfastnoiselite cimport FractalType as _FractalType
@@ -21,7 +21,7 @@ from .cppfastnoiselite cimport FastNoiseLitePy as _FNL
 
 __author__ = 'Tiziano Bettio'
 __license__ = 'MIT'
-__version__ = '0.0.7'
+__version__ = '0.0.8.dev0'
 __copyright__ = """Copyright (c) 2021 Tiziano Bettio
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -346,3 +346,28 @@ cdef class FastNoiseLite:
             for c in range(num_coords):
                 result_view[c] = deref(self.thisptr).GetNoise(coords[0, c], coords[1, c], coords[2, c])
         return result
+
+    def get_open_simplex2s_with_gradient(self, float x, float y, float z):
+        cdef NoiseGradient3D gradient = deref(self.thisptr).GetOpenSimplex2SWithGradient(x, y, z)
+        return gradient.value, (gradient.dx, gradient.dy, gradient.dz)
+
+    def gen_open_simplex2s_with_gradient_from_coords(self, float[:, :] coords):
+        cdef Py_ssize_t num_coords = coords.shape[1]
+        if coords.shape[0] != 3:
+            raise ValueError("coords must have shape (3, N) with XYZ rows")
+
+        values = np.empty((num_coords,), dtype=np.float32)
+        gradients = np.empty((num_coords, 3), dtype=np.float32)
+        cdef float[:] values_view = values
+        cdef float[:, :] gradients_view = gradients
+        cdef Py_ssize_t c
+        cdef NoiseGradient3D gradient
+        for c in range(num_coords):
+            gradient = deref(self.thisptr).GetOpenSimplex2SWithGradient(
+                coords[0, c], coords[1, c], coords[2, c]
+            )
+            values_view[c] = gradient.value
+            gradients_view[c, 0] = gradient.dx
+            gradients_view[c, 1] = gradient.dy
+            gradients_view[c, 2] = gradient.dz
+        return values, gradients

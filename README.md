@@ -3,17 +3,19 @@
 # Cython wrapper for the [FastNoise Lite](https://github.com/Auburn/FastNoise/) library
 
 This wraps Auburns' great [FastNoise Lite](https://github.com/Auburn/FastNoise/)
-library using Cython  for use in Python 3.6+
+library using Cython. This fork targets Python 3.13+.
 
 ## Installation
 
-This package is available on the [Python Package Index](https://pypi.org) both
-as source and binary distribution for a variety of Python versions and
-platforms using the following command:
+Install this fork, including its pinned native submodule:
 
 ```bash
-pip install pyfastnoiselite  # On some systems, "pip" has to be replaced by "pip3"
+pip install "pyfastnoiselite @ git+https://github.com/CrashHermit/PyFastNoiseLite.git@analytic-opensimplex2s-gradients"
 ```
+
+Source builds require a C++11 compiler; isolated builds install Cython, NumPy,
+setuptools, and wheel. Native headers come from the pinned submodule rather than
+a build-time download of an upstream branch.
 
 > __Note__:
 >
@@ -47,3 +49,25 @@ coords = np.array([Xs, Ys, Zs], dtype=np.float32)
 # Generate noise for each coordinate
 print(noise.gen_from_coords(coords)) # [0.11303097 -0.5841235  -0.45224023]
 ```
+
+## OpenSimplex2S gradients
+
+`FastNoiseLite` also exposes `get_open_simplex2s_with_gradient(x, y, z)`,
+which returns `(value, (dx, dy, dz))`, and
+`gen_open_simplex2s_with_gradient_from_coords(coords)`, which returns
+`(values, gradients)`. The batch input is a float32 array with shape `(3, N)`
+(one XYZ coordinate per column); outputs have shapes `(N,)` and `(N, 3)`,
+respectively, and use float32 CPU arithmetic. Empty batches are supported.
+
+These APIs explicitly evaluate raw 3D OpenSimplex2S with the instance's seed,
+frequency, and 3D rotation setting. The value is the same as `get_noise` when
+the instance uses OpenSimplex2S with `FractalType_None`. Derivatives are
+Cartesian derivatives with respect to the original input coordinates, including
+the frequency and rotation transformations. Other noise types and fractal
+compositions are not evaluated, and no full fractal-gradient API is provided.
+
+Scalar compatibility preserves small inherited FastNoiseLite lattice-selection
+discontinuities. Gradients are analytic within the selected polynomial branch;
+they are undefined at jumps. This API does not claim that the inherited scalar
+function is globally continuous or `C1`. Finite-difference stencils that cross a
+jump need not agree with its local derivative.
