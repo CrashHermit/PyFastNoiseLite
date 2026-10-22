@@ -6,7 +6,7 @@ Provides Cython header for "ext/FastNoise/Cpp/FastNoiseLite.h".
 
 __author__ = 'Tiziano Bettio'
 __license__ = 'MIT'
-__version__ = '0.0.8.dev1'
+__version__ = '0.0.8.dev2'
 __copyright__ = """Copyright (c) 2021 Tiziano Bettio
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -73,6 +73,12 @@ cdef extern from 'Cpp/FastNoiseLite.h':
         float dy
         float dz
 
+    cdef cppclass NoiseHessian3D "FastNoiseLite::NoiseHessian3D":
+        float value
+        float dx
+        float dy
+        float dz
+        float hessian[3][3]
     cdef cppclass FastNoiseLite:
         FastNoiseLite() except +
         void SetSeed(int)
@@ -117,5 +123,6 @@ cdef extern from 'FastNoiseLitePy.h':
         float GetNoise(float, float)
         float GetNoise(float, float, float)
         NoiseGradient3D GetOpenSimplex2SWithGradient(float, float, float)
+        NoiseHessian3D GetOpenSimplex2SWithHessian(float, float, float)
         void DomainWarp(float, float)
         void DomainWarp(float, float, float)

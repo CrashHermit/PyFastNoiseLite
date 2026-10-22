@@ -174,3 +174,67 @@ def test_gradient_batch_requires_xyz_rows_and_supports_empty_input():
         noise.gen_open_simplex2s_with_gradient_from_coords(
             np.empty((2, 3), dtype=np.float32)
         )
+
+
+@pytest.mark.parametrize(
+    "rotation",
+    [
+        RotationType3D.RotationType3D_None,
+        RotationType3D.RotationType3D_ImproveXYPlanes,
+        RotationType3D.RotationType3D_ImproveXZPlanes,
+    ],
+)
+@pytest.mark.parametrize("frequency", [0.037, -0.061])
+def test_hessian_matches_gradient_differences_and_batch(rotation, frequency):
+    noise = FastNoiseLite(seed=907)
+    noise.frequency = frequency
+    noise.rotation_type_3d = rotation
+    noise.noise_type = NoiseType.NoiseType_Perlin
+    noise.fractal_type = FractalType.FractalType_FBm
+    points = np.asarray([[0.37, -1.21], [-0.81, 0.29], [1.13, 2.7]], dtype=np.float32)
+    values, gradients, hessians = noise.gen_open_simplex2s_with_hessian_from_coords(points)
+    assert values.shape == (2,)
+    assert gradients.shape == (2, 3)
+    assert hessians.shape == (2, 3, 3)
+    assert values.dtype == gradients.dtype == hessians.dtype == np.float32
+    step = np.float32(0.001)
+    for index in range(points.shape[1]):
+        value, gradient, hessian = noise.get_open_simplex2s_with_hessian(*points[:, index])
+        raw_value, raw_gradient = noise.get_open_simplex2s_with_gradient(*points[:, index])
+        assert values[index] == value == raw_value
+        np.testing.assert_array_equal(gradients[index], raw_gradient)
+        np.testing.assert_array_equal(gradients[index], gradient)
+        np.testing.assert_array_equal(hessians[index], hessian)
+        np.testing.assert_allclose(hessian, np.asarray(hessian).T, rtol=0, atol=2e-6)
+        finite_difference = np.empty((3, 3), dtype=np.float64)
+        for axis in range(3):
+            offset = np.zeros(3, dtype=np.float32)
+            offset[axis] = step
+            plus_gradient = noise.get_open_simplex2s_with_gradient(*(points[:, index] + offset))[1]
+            minus_gradient = noise.get_open_simplex2s_with_gradient(*(points[:, index] - offset))[1]
+            finite_difference[:, axis] = (
+                np.asarray(plus_gradient) - np.asarray(minus_gradient)
+            ) / (2.0 * float(step))
+        np.testing.assert_allclose(hessian, finite_difference, rtol=3e-2, atol=5e-3)
+
+
+def test_hessian_support_join_and_empty_batch():
+    noise = FastNoiseLite(seed=2026)
+    noise.frequency = 1.0
+    orientation = _source_orientation(RotationType3D.RotationType3D_None)
+    points = np.asarray(
+        [
+            orientation.T @ [np.sqrt(0.75) - 1e-5, 0.0, 0.0],
+            orientation.T @ [np.sqrt(0.75) + 1e-5, 0.0, 0.0],
+        ],
+        dtype=np.float32,
+    ).T
+    _, gradients, hessians = noise.gen_open_simplex2s_with_hessian_from_coords(points)
+    np.testing.assert_allclose(gradients[1], gradients[0], rtol=0, atol=2e-3)
+    np.testing.assert_allclose(hessians[1], hessians[0], rtol=0, atol=2e-2)
+    values, gradients, hessians = noise.gen_open_simplex2s_with_hessian_from_coords(
+        np.empty((3, 0), dtype=np.float32)
+    )
+    assert values.shape == (0,)
+    assert gradients.shape == (0, 3)
+    assert hessians.shape == (0, 3, 3)

@@ -11,7 +11,7 @@ import numpy as np
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport unique_ptr
 
-from .cppfastnoiselite cimport FastNoiseLitePy as _FNL, NoiseGradient3D
+from .cppfastnoiselite cimport FastNoiseLitePy as _FNL, NoiseGradient3D, NoiseHessian3D
 # from .cppfastnoiselite cimport NoiseType as _NoiseType
 # from .cppfastnoiselite cimport RotationType3D as _RotationType3D
 # from .cppfastnoiselite cimport FractalType as _FractalType
@@ -21,7 +21,7 @@ from .cppfastnoiselite cimport FastNoiseLitePy as _FNL, NoiseGradient3D
 
 __author__ = 'Tiziano Bettio'
 __license__ = 'MIT'
-__version__ = '0.0.8.dev1'
+__version__ = '0.0.8.dev2'
 __copyright__ = """Copyright (c) 2021 Tiziano Bettio
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -371,3 +371,34 @@ cdef class FastNoiseLite:
             gradients_view[c, 1] = gradient.dy
             gradients_view[c, 2] = gradient.dz
         return values, gradients
+    def get_open_simplex2s_with_hessian(self, float x, float y, float z):
+        cdef NoiseHessian3D sample = deref(self.thisptr).GetOpenSimplex2SWithHessian(x, y, z)
+        return sample.value, (sample.dx, sample.dy, sample.dz), (
+            (sample.hessian[0][0], sample.hessian[0][1], sample.hessian[0][2]),
+            (sample.hessian[1][0], sample.hessian[1][1], sample.hessian[1][2]),
+            (sample.hessian[2][0], sample.hessian[2][1], sample.hessian[2][2]),
+        )
+
+    def gen_open_simplex2s_with_hessian_from_coords(self, float[:, :] coords):
+        cdef Py_ssize_t num_coords = coords.shape[1]
+
+        values = np.empty((num_coords,), dtype=np.float32)
+        gradients = np.empty((num_coords, 3), dtype=np.float32)
+        hessians = np.empty((num_coords, 3, 3), dtype=np.float32)
+        cdef float[:] values_view = values
+        cdef float[:, :] gradients_view = gradients
+        cdef float[:, :, :] hessians_view = hessians
+        cdef Py_ssize_t c, row, column
+        cdef NoiseHessian3D sample
+        for c in range(num_coords):
+            sample = deref(self.thisptr).GetOpenSimplex2SWithHessian(
+                coords[0, c], coords[1, c], coords[2, c]
+            )
+            values_view[c] = sample.value
+            gradients_view[c, 0] = sample.dx
+            gradients_view[c, 1] = sample.dy
+            gradients_view[c, 2] = sample.dz
+            for row in range(3):
+                for column in range(3):
+                    hessians_view[c, row, column] = sample.hessian[row][column]
+        return values, gradients, hessians

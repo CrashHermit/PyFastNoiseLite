@@ -1,5 +1,5 @@
 include VERSION
-recursive-include src *.pyx *.pxd *.py
+recursive-include src *.pyx *.pxd *.py *.pyi
 include ext/CPPWrapper/FastNoiseLitePy.h
 include ext/FastNoise/Cpp/FastNoiseLite.h
 include ext/FastNoise/LICENSE

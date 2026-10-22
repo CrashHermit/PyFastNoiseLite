@@ -50,21 +50,23 @@ coords = np.array([Xs, Ys, Zs], dtype=np.float32)
 print(noise.gen_from_coords(coords)) # [0.11303097 -0.5841235  -0.45224023]
 ```
 
-## OpenSimplex2S gradients
+## Analytic OpenSimplex2S derivatives
 
-`FastNoiseLite` also exposes `get_open_simplex2s_with_gradient(x, y, z)`,
-which returns `(value, (dx, dy, dz))`, and
-`gen_open_simplex2s_with_gradient_from_coords(coords)`, which returns
-`(values, gradients)`. The batch input is a float32 array with shape `(3, N)`
-(one XYZ coordinate per column); outputs have shapes `(N,)` and `(N, 3)`,
-respectively, and use float32 CPU arithmetic. Empty batches are supported.
+`FastNoiseLite` exposes raw 3D OpenSimplex2S sampling with first and second
+derivatives. `get_open_simplex2s_with_gradient(x, y, z)` returns
+`(value, (dx, dy, dz))`; `get_open_simplex2s_with_hessian(x, y, z)` returns
+`(value, (dx, dy, dz), ((dxx, dxy, dxz), (dyx, dyy, dyz), (dzx, dzy, dzz)))`.
+The batch counterparts return `(values, gradients)` and
+`(values, gradients, Hessians)` respectively. Batch input is a float32 array
+with shape `(3, N)` (one XYZ coordinate per column); output shapes are `(N,)`,
+`(N, 3)`, and `(N, 3, 3)`. Empty batches are supported.
 
-These APIs explicitly evaluate raw 3D OpenSimplex2S with the instance's seed,
-frequency, and 3D rotation setting. The value is the same as `get_noise` when
-the instance uses OpenSimplex2S with `FractalType_None`. Derivatives are
-Cartesian derivatives with respect to the original input coordinates, including
-the frequency and rotation transformations. Other noise types and fractal
-compositions are not evaluated, and no full fractal-gradient API is provided.
+The APIs evaluate raw 3D OpenSimplex2S using the instance seed, frequency, and
+3D rotation, irrespective of selected noise/fractal modes. Derivatives are
+Cartesian derivatives with respect to original input coordinates, including
+both axes of the frequency/orientation transform. Values and gradients match
+the corresponding existing APIs exactly. The Hessian is analytic and symmetric
+up to floating-point rounding; finite differences are used only in tests.
 
 The 3D OpenSimplex2S value-only sampler and these gradient APIs use complete
 active-corner support from the two offset cubic lattices. This corrects

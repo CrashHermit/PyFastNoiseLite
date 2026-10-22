@@ -5,7 +5,7 @@ from Cython.Build import cythonize
 
 __author__ = "Tiziano Bettio"
 __license__ = "MIT"
-__version__ = "0.0.8.dev1"
+__version__ = "0.0.8.dev2"
 
 __copyright__ = """
 Copyright (c) 2021 Tiziano Bettio
@@ -74,7 +74,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/tizilogic/pyfastnoiselite",
     packages=find_namespace_packages(where="src"),
-    package_data={"pyfastnoiselite": ["LICENSE", "VERSION"]},
+    package_data={"pyfastnoiselite": ["LICENSE", "VERSION", "pyfastnoiselite.pyi"]},
     package_dir={"": "src"},
     classifiers=[
         "Programming Language :: Python :: 3",
