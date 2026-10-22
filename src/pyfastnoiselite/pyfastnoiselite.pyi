@@ -1,11 +1,10 @@
 from enum import Enum
-from typing import TypeAlias
 
 import numpy as np
 import numpy.typing as npt
 
-Gradient3D: TypeAlias = tuple[float, float, float]
-Hessian3D: TypeAlias = tuple[Gradient3D, Gradient3D, Gradient3D]
+type Gradient3D = tuple[float, float, float]
+type Hessian3D = tuple[Gradient3D, Gradient3D, Gradient3D]
 
 class NoiseType(Enum):
     NoiseType_OpenSimplex2: int
@@ -67,7 +66,9 @@ class FastNoiseLite:
     domain_warp_amp: float
 
     def get_noise(self, x: float, y: float, z: float | None = ...) -> float: ...
-    def gen_from_coords(self, coords: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]: ...
+    def gen_from_coords(
+        self, coords: npt.NDArray[np.float32]
+    ) -> npt.NDArray[np.float32]: ...
     def get_open_simplex2s_with_gradient(
         self, x: float, y: float, z: float
     ) -> tuple[float, Gradient3D]: ...

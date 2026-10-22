@@ -192,15 +192,21 @@ def test_hessian_matches_gradient_differences_and_batch(rotation, frequency):
     noise.noise_type = NoiseType.NoiseType_Perlin
     noise.fractal_type = FractalType.FractalType_FBm
     points = np.asarray([[0.37, -1.21], [-0.81, 0.29], [1.13, 2.7]], dtype=np.float32)
-    values, gradients, hessians = noise.gen_open_simplex2s_with_hessian_from_coords(points)
+    values, gradients, hessians = noise.gen_open_simplex2s_with_hessian_from_coords(
+        points
+    )
     assert values.shape == (2,)
     assert gradients.shape == (2, 3)
     assert hessians.shape == (2, 3, 3)
     assert values.dtype == gradients.dtype == hessians.dtype == np.float32
     step = np.float32(0.001)
     for index in range(points.shape[1]):
-        value, gradient, hessian = noise.get_open_simplex2s_with_hessian(*points[:, index])
-        raw_value, raw_gradient = noise.get_open_simplex2s_with_gradient(*points[:, index])
+        value, gradient, hessian = noise.get_open_simplex2s_with_hessian(
+            *points[:, index]
+        )
+        raw_value, raw_gradient = noise.get_open_simplex2s_with_gradient(
+            *points[:, index]
+        )
         assert values[index] == value == raw_value
         np.testing.assert_array_equal(gradients[index], raw_gradient)
         np.testing.assert_array_equal(gradients[index], gradient)
@@ -210,8 +216,12 @@ def test_hessian_matches_gradient_differences_and_batch(rotation, frequency):
         for axis in range(3):
             offset = np.zeros(3, dtype=np.float32)
             offset[axis] = step
-            plus_gradient = noise.get_open_simplex2s_with_gradient(*(points[:, index] + offset))[1]
-            minus_gradient = noise.get_open_simplex2s_with_gradient(*(points[:, index] - offset))[1]
+            plus_gradient = noise.get_open_simplex2s_with_gradient(
+                *(points[:, index] + offset)
+            )[1]
+            minus_gradient = noise.get_open_simplex2s_with_gradient(
+                *(points[:, index] - offset)
+            )[1]
             finite_difference[:, axis] = (
                 np.asarray(plus_gradient) - np.asarray(minus_gradient)
             ) / (2.0 * float(step))
